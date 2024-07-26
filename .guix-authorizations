@@ -1,0 +1,17 @@
+;;; SPDX-FileCopyrightText: © 2024 Jean-Pierre De Jesus DIAZ <me@jeandudey.tech>
+;;; SPDX-License-Identifier: GPL-3.0-or-later
+;;;
+;;; This is the list of OpenPGP keys currently authorized to sign commits in
+;;; this repository.
+;;;
+;;; Usage:
+;;;
+;;; guix git authenticate 2915c81821440b6e50425f8c4045873af5303918 '9D54 3ADF 6E90 348C C606  90A9 6279 AEC2 0A95 24EC'
+
+(authorizations
+ (version 0)
+  
+ (("9D54 3ADF 6E90 348C C606  90A9 6279 AEC2 0A95 24EC"
+  (name "jeandudey"))))
+
+;; vim: filetype=scheme
