@@ -101,11 +101,9 @@
                               (string-append bin "/tsdnsserver")))))
                (replace 'validate-runpath
                  (lambda* (#:key outputs #:allow-other-keys)
-                   (let ((validate-runpath
-                           (assoc-ref gnu:%standard-phases 'validate-runpath)))
-                     (validate-runpath #:outputs outputs
-                                       #:elf-directories
-                                       '("bin" "share"))))))))
+                   ((assoc-ref gnu:%standard-phases 'validate-runpath)
+                    #:outputs outputs
+                    #:elf-directories '("share")))))))
     (inputs
      (list `(,gcc "lib")
            glibc
