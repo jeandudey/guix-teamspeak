@@ -54,18 +54,18 @@
            ;; directory to the store to execute the teamspeak server which
            ;; will fail because the file system is read-only.
            #:install-plan
-           #~'(("." #$(string-append "share/teamspeak-" version "/")
+           #~'(("." #$(string-append "share/teamspeak-server-" version "/")
                #:exclude ("3RD_PARTY_LICENSES" "CHANGELOG" "LICENSE"
                           "libts3db_mariadb.so"
                           "ts3server_minimal_runscript.sh"
                           "ts3server_startscript.sh"))
                ("3RD_PARTY_LICENSES"
-                #$(string-append "share/doc/teamspeak-" version
+                #$(string-append "share/doc/teamspeak-server-" version
                                  "/3RD_PARTY_LICENSES"))
                ("CHANGELOG"
-                #$(string-append "share/doc/teamspeak-" version
+                #$(string-append "share/doc/teamspeak-server-" version
                                  "/CHANGELOG"))
-               ("doc" #$(string-append "share/doc/teamspeak-" version)))
+               ("doc" #$(string-append "share/doc/teamspeak-server-" version)))
 
            #:phases
            #~(modify-phases %standard-phases
@@ -77,7 +77,7 @@
                           (raw-rpath (get-string-all port))
                           (old-rpath (string-delete #\newline raw-rpath))
                           (new-rpath (string-append old-rpath ":" #$output
-                                                    "/share/teamspeak-"
+                                                    "/share/teamspeak-server-"
                                                     #$version)))
                      (close-pipe port)
 
@@ -86,38 +86,40 @@
                (add-after 'install 'delete-not-excluded
                  (lambda _
                    (delete-file-recursively
-                     (string-append #$output "/share/teamspeak-"
+                     (string-append #$output "/share/teamspeak-server-"
                                     #$version "/doc"))
                    (delete-file-recursively
-                     (string-append #$output "/share/teamspeak-"
+                     (string-append #$output "/share/teamspeak-server-"
                                     #$version "/redist"))))
                (add-after 'delete-not-excluded 'create-symbolic-links
                  (lambda _
                    (let ((bin (string-append #$output "/bin"))
-                         (teamspeak (string-append #$output "/share/teamspeak-" #$version)))
+                         (teamspeak (string-append #$output "/share/teamspeak-server-" #$version)))
                      (mkdir-p bin)
                      (symlink (string-append teamspeak "/tsdns/tsdnsserver")
                               (string-append bin "/tsdnsserver")))))
-               ;; Wrap program to set serverquerydocs_path argument since the
-               ;; binary expects it on the current working directory, but we
-               ;; expect users of the package to call it from the most
-               ;; convenient location.
+               ;; Wrap program to set dbsqlpath and serverquerydocs_path
+               ;; arguments since the binary expects it on the current working
+               ;; directory, but we expect users of the package to call it
+               ;; from the most convenient location.
                (add-after 'create-symbolic-links 'wrap-program
                  (lambda _
                    (let ((sh (which "bash"))
                          (ts3server (string-append
-                                      #$output "/share/teamspeak-" #$version
+                                      #$output "/share/teamspeak-server-" #$version
                                       "/ts3server"))
                          (ts3server-wrapped (string-append #$output "/bin/ts3server")))
                      (call-with-output-file ts3server-wrapped
                        (lambda (port)
                          (format port
-                                 "#!~a~%exec -a \"$0\" \"~a\" ~a \"$@\"~%"
+                                 "#!~a~%exec -a \"$0\" \"~a\" \"$@\"~%"
                                  sh
                                  ts3server
                                  (string-append "serverquerydocs_path="
-                                                #$output "/share/teamspeak-"
-                                                #$version "/serverquerydocs"))))
+                                                #$output
+                                                "/share/teamspeak-server-"
+                                                #$version
+                                                "/serverquerydocs"))))
                      (chmod ts3server-wrapped #o755))))
                (replace 'validate-runpath
                  (lambda* (#:key outputs #:allow-other-keys)
