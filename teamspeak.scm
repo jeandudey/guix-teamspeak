@@ -13,9 +13,9 @@
   #:use-module (nonguix build-system binary)
   #:use-module (nonguix licenses))
 
-(define-public teamspeak
+(define-public teamspeak-server
   (package
-    (name "teamspeak")
+    (name "teamspeak-server")
     (version "3.13.7")
     (source (origin
               (method url-fetch)
