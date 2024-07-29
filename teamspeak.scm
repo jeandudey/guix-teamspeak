@@ -40,6 +40,7 @@
 
            #:modules '(((guix build gnu-build-system) #:prefix gnu:)
                        (guix build utils)
+                       (ice-9 format)
                        (ice-9 popen)
                        (ice-9 textual-ports)
                        (nonguix build binary-build-system))
@@ -95,10 +96,29 @@
                    (let ((bin (string-append #$output "/bin"))
                          (teamspeak (string-append #$output "/share/teamspeak-" #$version)))
                      (mkdir-p bin)
-                     (symlink (string-append teamspeak "/ts3server")
-                              (string-append bin "/ts3server"))
                      (symlink (string-append teamspeak "/tsdns/tsdnsserver")
                               (string-append bin "/tsdnsserver")))))
+               ;; Wrap program to set serverquerydocs_path argument since the
+               ;; binary expects it on the current working directory, but we
+               ;; expect users of the package to call it from the most
+               ;; convenient location.
+               (add-after 'create-symbolic-links 'wrap-program
+                 (lambda _
+                   (let ((sh (which "bash"))
+                         (ts3server (string-append
+                                      #$output "/share/teamspeak-" #$version
+                                      "/ts3server"))
+                         (ts3server-wrapped (string-append #$output "/bin/ts3server")))
+                     (call-with-output-file ts3server-wrapped
+                       (lambda (port)
+                         (format port
+                                 "#!~a~%exec -a \"$0\" \"~a\" ~a \"$@\"~%"
+                                 sh
+                                 ts3server
+                                 (string-append "serverquerydocs_path="
+                                                #$output "/share/teamspeak-"
+                                                #$version "/serverquerydocs"))))
+                     (chmod ts3server-wrapped #o755))))
                (replace 'validate-runpath
                  (lambda* (#:key outputs #:allow-other-keys)
                    ((assoc-ref gnu:%standard-phases 'validate-runpath)
