@@ -6,6 +6,7 @@
   #:use-module (gnu packages databases)
   #:use-module (gnu packages base)
   #:use-module (gnu packages gcc)
+  #:use-module (gnu packages geo)
   #:use-module (guix build-system gnu)
   #:use-module (guix download)
   #:use-module (guix gexp)
@@ -29,7 +30,7 @@
     (build-system binary-build-system)
     (arguments
      (list #:patchelf-plan
-           #~'(("ts3server" ("gcc" "glibc"))
+           #~'(("ts3server" ("gcc" "glibc" "libmaxminddb"))
                ("tsdns/tsdnsserver" ("glibc"))
                ("libts3_ssh.so" ("glibc"))
                ("libts3db_postgresql.so" ("gcc" "glibc" "postgresql"))
@@ -129,6 +130,7 @@
     (inputs
      (list `(,gcc "lib")
            glibc
+           libmaxminddb
            postgresql))
     (home-page "https://www.teamspeak.com/")
     (synopsis "Server for proprietary voice chat software")
