@@ -48,10 +48,16 @@
            ;;
            ;; - libts3db_mariadb.so can't be used as there's no package in
            ;; GNU Guix for libmariadb.so.2, only libmariadb.so.3.
+           ;;
+           ;; - The scripts are not usefult because they try to change
+           ;; directory to the store to execute the teamspeak server which
+           ;; will fail because the file system is read-only.
            #:install-plan
            #~'(("." #$(string-append "share/teamspeak-" version "/")
                #:exclude ("3RD_PARTY_LICENSES" "CHANGELOG" "LICENSE"
-                          "libts3db_mariadb.so"))
+                          "libts3db_mariadb.so"
+                          "ts3server_minimal_runscript.sh"
+                          "ts3server_startscript.sh"))
                ("3RD_PARTY_LICENSES"
                 #$(string-append "share/doc/teamspeak-" version
                                  "/3RD_PARTY_LICENSES"))
