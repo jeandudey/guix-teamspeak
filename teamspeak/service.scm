@@ -43,6 +43,8 @@
          (use-modules (gnu build activation))
 
          (let ((user (getpwnam "teamspeak")))
+           (mkdir-p/perms "/var/crash/teamspeak" user #o755)
+           (mkdir-p/perms "/var/run/teamspeak" user #o755)
            (mkdir-p/perms "/var/lib/teamspeak" user #o755)
            (mkdir-p/perms "/var/log/teamspeak" user #o755)
 
@@ -59,8 +61,13 @@
                    ;; accepting the terms of the TeamSpeak license,
                    ;; so, read it.
                    "license_accepted=1\n"
+                   "daemon=1\n"
+                   "crashdumps_path=/var/crash/teamspeak\n"
+                   "pid_file=/var/run/teamspeak/teamspeak.pid\n"
                    "logpath=/var/log/teamspeak\n"
-                   "logappend=1"))
+                   "logappend=1\n"
+                   "query_ssh_port=20022\n"
+                   "query_ssh_ip=0.0.0.0,0::0\n"))
 
 (define (teamspeak-shepherd-service config)
   (match-record config <teamspeak-configuration>
@@ -75,6 +82,7 @@
                                (string-append "inifile=" #$teamspeak.ini))
                          #:user "teamspeak"
                          #:group "teamspeak"
+                         #:pid-file "/var/run/teamspeak/teamspeak.pid"
                          #:directory "/var/lib/teamspeak"))
               (stop #~(make-kill-destructor))
               (actions (list (shepherd-configuration-action teamspeak.ini))))))))
