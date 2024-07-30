@@ -17,6 +17,33 @@
             teamspeak-configuration-package
             teamspeak-service-type))
 
+;;;
+;;; Commentary: TeamSpeak server service.
+;;;
+;;; This provides a service for TeamSpeak server intended to reduce
+;;; maintenance efforts, upgrading should be as simple as updating the package
+;;; definition.
+;;;
+;;; To do:
+;;;
+;;; - Use least-authority-wrapper to make sure that TeamSpeak server doesn't
+;;; have access to the rest of the system to minimize attack surface and
+;;; increase user privacy, e.g. let desktop users run the server without
+;;; worrying on "what if" TeamSpeak was attacked or it purposefully tried to
+;;; invade privacy.
+;;;
+;;; - Using Tor to communicate with the outer world, the TeamSpeak server
+;;; needs to communicate back home for registration purposes.
+;;;
+;;; - If the user disables Tor for whatever reason, also add netfilter table
+;;; rules (nftables) to only reach TeamSpeak servers. See:
+;;;
+;;; <https://support.teamspeak.com/hc/en-us/articles/360002712257-Which-ports-does-the-TeamSpeak-3-server-use>.
+;;;
+;;; - Allow using PostgreSQL.
+;;;
+;;; - Allow using Maxmind databases for GeoIP lookups.
+
 (define-configuration teamspeak-configuration
   (package
     (file-like teamspeak-server)
