@@ -3,11 +3,16 @@
 
 (define-module (teamspeak)
   #:use-module (gnu packages)
-  #:use-module (gnu packages databases)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages compression)
+  #:use-module (gnu packages databases)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages geo)
+  #:use-module (gnu packages glib)
   #:use-module (gnu packages gtk)
+  #:use-module (gnu packages linux)
+  #:use-module (gnu packages llvm)
+  #:use-module (gnu packages qt)
   #:use-module (gnu packages vulkan)
   #:use-module (gnu packages xorg)
   #:use-module (guix build-system gnu)
@@ -81,6 +86,125 @@
     (synopsis "Client for proprietary voice chat software")
     (description "This package provides the TeamSpeak Client for linux.")
     (license (nonfree ""))))
+
+(define-public teamspeak-client-3
+  (package
+    (inherit teamspeak-client)
+    (version "3.6.2")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "https://files.teamspeak-services.com"
+                                  "/releases/client/" version
+                                  "/TeamSpeak3-Client-linux_amd64-" version
+                                  ".run"))
+              (sha256
+               (base32
+                "08k400xx8qjrlhxblxdrwva9kkqim387s3kh9a83z8kii51i1war"))))
+    (build-system binary-build-system)
+    (arguments
+     (list #:patchelf-plan
+           #~'(("error_report" ("gcc" "libcxx" "qtbase" "quazip"))
+               ("package_inst" ("gcc" "libcxx" "qtbase"))
+               ("ts3client_linux_amd64" ("gcc"
+                                         "glib"
+                                         "glibc"
+                                         "libcxx"
+                                         "qtbase"
+                                         "qtsvg"
+                                         "qtwebchannel"
+                                         "qtwebengine"
+                                         "qtwebsockets"
+                                         "quazip"))
+               ("update" ("gcc" "glibc" "libcxx" "qtbase"))
+               ("soundbackends/libalsa_linux_amd64.so" ("alsa-lib"
+                                                        "gcc"
+                                                        "libcxx")))
+
+           #:install-plan
+           #~'(("." #$(string-append "share/teamspeak-client-" version "/")
+                #:exclude ("CHANGELOG"
+                           "QtWebEngineProcess"
+                           "libGL.so" "libQt5Core.so.5" "libQt5DBus.so.5"
+                           "libQt5Gui.so.5" "libQt5Network.so.5"
+                           "libQt5PrintSupport.so.5" "libQt5QmlModels.so.5"
+                           "libQt5Qml.so.5" "libQt5Quick.so.5"
+                           "libQt5QuickWidgets.so.5"
+                           "libQt5Sql.so.5" "libQt5Svg.so.5"
+                           "libQt5WebChannel.so.5" "libQt5WebEngineCore.so.5"
+                           "libQt5WebEngineWidgets.so.5"
+                           "libQt5WebSockets.so.5" "libQt5Widgets.so.5"
+                           "libQt5XcbQpa.so.5" "libcrypto.so.1.1" "libc++.so.1" "libc++abi.so.1"
+                           "libquazip.so" "libunwind.so.1" "libssl.so.1.1"
+                           "qt.conf" "ts3client_runscript.sh"))
+               ("CHANGELOG" #$(string-append "share/doc/teamspeak-client-"
+                                             version "/")))
+
+           #:imported-modules `(,@%binary-build-system-modules
+                                ,@%gnu-build-system-modules
+                                (guix build qt-utils))
+
+           #:modules '(((guix build gnu-build-system) #:prefix gnu:)
+                       (guix build qt-utils)
+                       (guix build utils)
+                       (nonguix build binary-build-system))
+
+           #:phases
+           #~(modify-phases %standard-phases
+               (replace 'unpack
+                 (lambda* (#:key inputs #:allow-other-keys)
+                   (let ((source (assoc-ref inputs "source")))
+                     (mkdir-p "source")
+                     (chdir "source")
+                     (invoke "bash" source "--tar" "-xvf"))))
+               (add-before 'patchelf 'patchelf-fix-quazip-name
+                 (lambda _
+                   (invoke "patchelf" "--replace-needed"
+                           "libquazip.so" "libquazip1-qt5.so"
+                           "error_report")
+                   (invoke "patchelf" "--replace-needed"
+                           "libquazip.so" "libquazip1-qt5.so"
+                           "ts3client_linux_amd64")))
+               (add-after 'install 'delete-not-excluded
+                 (lambda _
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/iconengines"))
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/imageformats"))
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/platforms"))
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/sqldrivers"))
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/xcbglintegrations"))))
+               (add-after 'delete-not-excluded 'create-symbolic-links
+                 (lambda _
+                   (mkdir-p (string-append #$output "/bin"))
+                   (symlink (string-append #$output "/share/teamspeak-client-"
+                                           #$version "/ts3client_linux_amd64")
+                            (string-append #$output "/bin/ts3client"))))
+               (replace 'validate-runpath
+                 (lambda* (#:key outputs #:allow-other-keys)
+                   ((assoc-ref gnu:%standard-phases 'validate-runpath)
+                    #:outputs outputs
+                    #:elf-directories '("share"))))
+               (add-after 'validate-runpath 'wrap-qt wrap-all-qt-programs))))
+    (inputs
+     (list alsa-lib
+           `(,gcc "lib")
+           libcxx
+           glib
+           glibc
+           qtbase-5
+           qtsvg-5
+           qtwebchannel-5
+           qtwebengine-5
+           qtwebsockets-5
+           quazip))))
 
 (define-public teamspeak-server
   (package
