@@ -7,12 +7,80 @@
   #:use-module (gnu packages base)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages geo)
+  #:use-module (gnu packages gtk)
+  #:use-module (gnu packages vulkan)
+  #:use-module (gnu packages xorg)
   #:use-module (guix build-system gnu)
   #:use-module (guix download)
   #:use-module (guix gexp)
   #:use-module (guix packages)
   #:use-module (nonguix build-system binary)
+  #:use-module (nonguix build-system chromium-binary)
   #:use-module (nonguix licenses))
+
+;;; NOTE: Also needs swiftshader, so consider adding it to GNU Guix.
+(define-public teamspeak-client
+  (package
+    (name "teamspeak-client")
+    (version "5.0.0-beta77")
+    (source (origin
+              (method url-fetch/tarbomb)
+              (uri (string-append "https://files.teamspeak-services.com"
+                                  "/pre_releases/client/" version
+                                  "/teamspeak-client.tar.gz"))
+              (sha256
+               (base32
+                "06qqp678cp1bsdxa1jnp4sl0hrw38n748369xyf7jg0d29xzjfvg"))))
+    (build-system chromium-binary-build-system)
+    (arguments
+     (list #:wrapper-plan
+           #~'("TeamSpeak"
+               "libcef.so"
+               "libEGL.so"
+               "libGLESv2.so"
+               "libolm.so.3"
+               "libtschat_client_lib.so"
+               "libtschat_client_lib_export.so")
+
+           #:install-plan
+           #~'(("." #$(string-append "share/teamspeak-client-" version "/")))
+
+           #:modules '((guix build utils)
+                       (ice-9 format)
+                       (ice-9 popen)
+                       (ice-9 textual-ports)
+                       (nonguix build chromium-binary-build-system))
+
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'patchelf 'patchelf-extra
+                 (lambda _
+                   (let* ((arguments `("patchelf" "--print-rpath" "TeamSpeak"))
+                          (command (string-join arguments))
+                          (port (open-input-pipe command))
+                          (raw-rpath (get-string-all port))
+                          (old-rpath (string-delete #\newline raw-rpath))
+                          (new-rpath (string-append old-rpath ":" #$output
+                                                    "/share/teamspeak-client-"
+                                                    #$version)))
+                     (close-pipe port)
+
+                     (format #t "Setting RUNPATH of \"TeamSpeak\" to ~s.~%" new-rpath)
+                     (invoke "patchelf" "--set-rpath" new-rpath "TeamSpeak"))))
+               (add-before 'install-wrapper 'create-symbolic-links
+                 (lambda _
+                   (mkdir-p (string-append #$output "/bin"))
+                   (symlink (string-append #$output "/share/teamspeak-client-" #$version "/TeamSpeak")
+                            (string-append #$output "/bin/TeamSpeak")))))))
+    (inputs
+     (list gdk-pixbuf
+           harfbuzz
+           libxscrnsaver
+           vulkan-loader))
+    (home-page "https://www.teamspeak.com")
+    (synopsis "Client for proprietary voice chat software")
+    (description "This package provides the TeamSpeak Client for linux.")
+    (license (nonfree ""))))
 
 (define-public teamspeak-server
   (package
