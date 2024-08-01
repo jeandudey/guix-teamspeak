@@ -122,9 +122,8 @@
 
            #:install-plan
            #~'(("." #$(string-append "share/teamspeak-client-" version "/")
-                #:exclude ("CHANGELOG"
-                           "QtWebEngineProcess"
-                           "libGL.so" "libQt5Core.so.5" "libQt5DBus.so.5"
+                #:exclude ("CHANGELOG" "QtWebEngineProcess" "libGL.so"
+                           "libQt5Core.so.5" "libQt5DBus.so.5"
                            "libQt5Gui.so.5" "libQt5Network.so.5"
                            "libQt5PrintSupport.so.5" "libQt5QmlModels.so.5"
                            "libQt5Qml.so.5" "libQt5Quick.so.5"
@@ -133,9 +132,10 @@
                            "libQt5WebChannel.so.5" "libQt5WebEngineCore.so.5"
                            "libQt5WebEngineWidgets.so.5"
                            "libQt5WebSockets.so.5" "libQt5Widgets.so.5"
-                           "libQt5XcbQpa.so.5" "libcrypto.so.1.1" "libc++.so.1" "libc++abi.so.1"
-                           "libquazip.so" "libunwind.so.1" "libssl.so.1.1"
-                           "qt.conf" "ts3client_runscript.sh"))
+                           "libQt5XcbQpa.so.5" "libcrypto.so.1.1" "libc++.so.1"
+                           "libc++abi.so.1" "libquazip.so" "libunwind.so.1"
+                           "libssl.so.1.1" "openglblacklist.json" "qt.conf"
+                           "ts3client_runscript.sh"))
                ("CHANGELOG" #$(string-append "share/doc/teamspeak-client-"
                                              version "/")))
 
@@ -175,6 +175,9 @@
                    (delete-file-recursively
                      (string-append #$output "/share/teamspeak-client-"
                                     #$version "/platforms"))
+                   (delete-file-recursively
+                     (string-append #$output "/share/teamspeak-client-"
+                                    #$version "/qtwebengine_locales"))
                    (delete-file-recursively
                      (string-append #$output "/share/teamspeak-client-"
                                     #$version "/sqldrivers"))
